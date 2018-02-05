@@ -27,18 +27,11 @@
 #define BASE_32_ENCODE_LENGTH Base32::GetEncode32Length(TOTP_SECRET_BYTE_COUNT)
 #define TOTP_EPOCH_INTERVAL 30 //a otp lasts for 30 seconds
 
-/*
- * the totpData struct intended for storage in flash
- */
-struct totpData {
-	bool enabled;								//TOTP global on/off switch
-	uint8_t keyBytes[TOTP_SECRET_BYTE_COUNT];	//secret key bytes
-};
-
 class ESP8266TOTP {
 public:
 	static bool ICACHE_FLASH_ATTR GetNewKey(uint8_t* keyBytes);
 	static bool ICACHE_FLASH_ATTR GetBase32Key(uint8_t* keyBytes, unsigned char* data32);
+    static bool ICACHE_FLASH_ATTR SetBase32Key(unsigned char* data32, uint8_t* keyBytes);
 	static uint8_t* ICACHE_FLASH_ATTR GetTOTPHMac(uint64_t epoch, uint8_t* keyBytes);
 	static int ICACHE_FLASH_ATTR GetTOTPToken(uint64_t epoch, uint8_t* keyBytes);
 	static bool ICACHE_FLASH_ATTR IsTokenValid(uint64_t epoch, uint8_t* keyBytes, int candidateOtp);

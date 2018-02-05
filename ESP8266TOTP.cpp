@@ -22,7 +22,7 @@
 unsigned char ESP8266TOTP::base32Alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 
 //QR code uri parts
-const char* ESP8266TOTP::qrCodeUriPre = "otpauth://totp/user@";
+const char* ESP8266TOTP::qrCodeUriPre = "otpauth://totp/admin@";
 const char* ESP8266TOTP::qrCodeUriSecret = "?secret=";
 const char* ESP8266TOTP::qrCodeUriIssuer = "&issuer=";
 
@@ -52,6 +52,13 @@ bool ICACHE_FLASH_ATTR ESP8266TOTP::GetBase32Key(uint8_t* keyBytes, unsigned cha
 
 	return false;
 
+}
+
+bool ICACHE_FLASH_ATTR ESP8266TOTP::SetBase32Key(unsigned char* data32, uint8_t* keyBytes) {
+    if (Base32::Unmap32(data32, BASE_32_ENCODE_LENGTH, ESP8266TOTP::base32Alphabet)) {
+        return Base32::Decode32(data32, BASE_32_ENCODE_LENGTH, keyBytes);
+    }
+    return false;
 }
 
 /*
@@ -108,9 +115,20 @@ int ICACHE_FLASH_ATTR ESP8266TOTP::GetTOTPToken(uint64_t epoch, uint8_t* keyByte
  */
 bool ICACHE_FLASH_ATTR ESP8266TOTP::IsTokenValid(uint64_t epoch, uint8_t* keyBytes, int candidateOtp) {
 
-	int otp = ESP8266TOTP::GetTOTPToken(epoch, keyBytes);
-	return otp == candidateOtp;
-
+    bool retval = false;
+    // Try in this exact time window first
+    if (ESP8266TOTP::GetTOTPToken(epoch, keyBytes) == candidateOtp) {
+        retval = true;
+    }
+    // Try in next time window
+    else if (ESP8266TOTP::GetTOTPToken(epoch + TOTP_EPOCH_INTERVAL, keyBytes) == candidateOtp) {
+        retval = true;
+    }
+    // Try in previous time window
+    else if (ESP8266TOTP::GetTOTPToken(epoch - TOTP_EPOCH_INTERVAL, keyBytes) == candidateOtp) {
+        retval = true;
+    }
+    return retval;
 }
 
 /*
